@@ -1,0 +1,374 @@
+docker info
+
+docker --help
+
+docker images 列出本地主机上的镜像
+
+一个镜像可以生成多个容器实例
+
+REPOSITORY ：表示镜像的仓库源      
+TAG  ：镜像的标签
+IMAGE ID  ：镜像id   
+CREATED  :镜像创建时间
+SIZE：镜像大小
+
+同一个仓库源可以有多个TAG，代表这个仓库源的不同版本，我们使用REPOSITORY：TAG来定义不同的镜像
+如果你不指定一个镜像的版本标签，例如 你只使用ubuntu docker将默认使用ubuntu：lastest镜像
+
+-a:列出本地所有的镜像（含中间映像层）
+-q:只列出镜像id
+--digests:显示镜像的摘要信息
+--no-trunc:显示完成的镜像信息
+
+示例：
+docker images -a
+docker images -q
+docker images -qa
+docker images --digests
+docker images --no-trunc
+
+===========================================================================================================
+
+查询镜像：
+
+docker search 某个镜像名字
+
+-s:列出收藏数不小于指定值的镜像
+--automated:只列出automated build类型的镜像
+
+
+示例：
+docker search tomcat
+docker search -s 30 tomcat
+docker search -s 30 --no-trunc tomcat
+
+=============================================================================================================
+
+下载镜像：
+docker pull 某个镜像名字
+
+docker pull tomcat  等价于docker pull tomcat:latest
+
+============================================================================================================
+
+删除镜像：
+
+删除一个镜像：
+docker rmi -f 某个镜像名字id /镜像名 都行
+
+删除多个镜像：
+docker rmi -f 镜像名：TAG 镜像名2：TAG
+
+删除全部镜像
+docker rmi -f $(docker images -qa)
+
+示例：
+docker rmi hello-word
+
+=============================================================================================================
+
+
+
+
+==============================================================================================================
+新建并启动容器
+docker run [options] image [command]
+
+docker run -it --name mycentos centos:centos7
+
+列出当前所有正在运行的容器
+docker ps option
+
+1)-a 列出当前所有正在运行的容器+历史上运行过的
+2）-l:显示最近创建的容器
+3）-n：显示最近n个创建的容器
+4）-q:静默模式，只显示容器编号
+--no-trunc:不截断输出
+
+
+退出容器
+两种方式：1）exit 容器停止退出 2)ctrl+P+Q 容器不停止退出(注意是大写字母)
+
+启动容器
+docker start 容器id或者容器名
+
+重启容器
+docker restart 容器id或者容器名
+
+停止容器
+docker stop 容器id或者容器名
+
+强制重启容器
+docker kill 容器id或者容器名
+
+删除已停止的容器
+docker rm 容器id
+
+强制删除容器
+docker rm -f 容器id
+
+一次性删除多个容器
+docker rm -f $(docker ps -a -q)
+docker ps -a -q | xargs docker rm 
+
+
+=============================================================================================================
+
+使用镜像centos:latest以后台模式启动一个容器
+
+启动守护式容器：
+docker run -d 容器名
+docker run -d centos
+
+查看容器日志：
+docker logs -f -t --tail 容器id
+-t:是加入时间戳
+-f：跟随最新的日志打印
+--tail:数字显示最后多少条
+
+
+docker run -d --name mycentos centos:centos7 /bin/sh -c "while true;do echo hello mango;sleep 2;done"
+docker logs efdd22c7c77c
+
+docker logs -t  efdd22c7c77c
+
+docker logs -t --tail 3 efdd22c7c77c
+
+
+查看容器内运行的进程
+docker top 容器id
+
+查看容器内部细节
+docker inspect 容器id
+
+
+进入正在运行的容器并以命令行交互
+docker exec -it 容器id bashshell
+
+重新进入docker attach 容器id
+
+上述两个区别：
+attach:直接进入容器启动命令的终端，不会启动新的进程
+
+exec:是在容器中打开新的终端，并且可以启动新的进程
+
+docker exec -it 7965b9a53248 /bin/bash
+
+从容器内拷贝文件到主机上：
+docker cp 容器id:容器内路径 目的主机路径
+
+
+==============================================================================================================
+
+镜像是一种轻量级，可执行的独立软件包，用来打包软件运行环境和基于运行环境开发的软件，它包含运行某个软件所需的
+所有内容，包括代码，运行时，库，环境变量，配置文件。
+
+
+
+==============================================================================================================
+
+命令：docker run -it -v /宿主机绝对路径目录:/容器内目录 镜像名
+查看数据卷是否挂在成功
+容器和宿主机之间数据共享
+容器停止退出后，主机修改后数据同步
+命令（带权限）：docker run -it -v /宿主机绝对路径目录:/容器内目录:ro 镜像名
+
+
+===============================================================================================================
+
+DockerFile添加：
+dockerfile是用来制作镜像的
+根目录下新建mydocker文件夹并进入
+可在DockerFile中使用volume命令来给镜像添加一个或者多个数据卷
+file构建
+build后生成镜像 获得一个新镜像zzyy/centos
+run容器
+
+示例：
+1)在服务器根目录下创建mydocker文件夹
+> mkdir mydocker
+
+2)在mydocker文件夹下创建Dockerfile文件,并添加以下内容
+>vi Dockerfile
+# volume test
+FROM centos
+VOLUME ["/dataVolumeContainer1","/dataVolumeContainer2"]
+CMD echo "finished,------success1"
+CMD /bin/bash
+
+3)创建新的镜像文件
+>docker build -f /mydocker/Dockerfile -t jly/centos .
+
+4)使用docker images 查看，此时已经有了jly/centos这个镜像文件
+
+5）创建该镜像文件对应的容器，并进入了容器
+>docker run -it jly/centos
+>ls -l
+
+6)此时已经有了2个数据卷dataVolumeContainer1和dataVolumeContainer2
+
+7）进入数据卷dataVolumeContainer1 并创建文件
+>cd dataVolumeContainer1
+>vi a.txt
+
+8)回到主服务器上
+
+9）查看容器的挂载情况
+>docker inspect 容器id
+
+10)进入挂在盘
+>cd /var/lib/docker/volumes/6cf52c0f2d0f5c3e4677a5ab3f3145c479dd5f19c7f4a055080fa4b3b451d6e4/_data
+
+11)无论在上述文件夹内创建文件还是在dataVolumeContainer1文件夹内创建文件，都能同步。
+
+编写 -》构建-》执行
+========================================================================================================================================
+命名的容器挂在数据卷，其它容器通过挂载这个（父容器）实现数据共享，挂载数据卷的容器，称之为数据卷容器。
+
+
+
+1）先启动一个父容器dc01 在dataVolumeContainer2新增内容
+2）dc02/dc03继承自dc01
+
+
+结论：容器之间配置信息的传递，数据卷的生命周期一直持续到没有容器使用它为止
+
+===========================================================================================================================================
+
+dockfile使用来构建docker镜像的构建文件，是由一系列命令和参数构成的脚本。
+构建三步骤:
+1)编写dockerfile文件
+2）docker build
+3) docker run
+
+dockerfile内容基础知识：
+1）每条保留字指令都必须为答谢字母且后面要跟随至少一个参数
+2）指令按照从上到下，顺序执行
+3）#标识注释
+4）每条指令都会创建一个新的镜像层，并对镜像进行提交
+
+docker执行dockerfile的大致流程：
+1）docker从基础镜像运行一个容器
+2）执行一条指令并对容器做出修改
+3）执行类似docker commit的操作提交一个新的镜像层
+4）docker再基于刚提交的镜像运行一个新容器
+5）执行dockerfile中的下一条指令直到所有指令都执行完成
+
+
+dockerfile体系结构：
+
+FROM:基础镜像，当前新镜像是基于哪个镜像的
+
+MAINTAINER:镜像维护者的姓名和邮箱地址
+
+RUN:容器构建时需要运行的命令
+
+EXPOSE:当前容器对外暴露出的端口
+
+WORKDIR:指定在创建容器后，终端默认登录的进来工作目录，一个落脚点
+
+ENV:用来在构建镜像过程中设置环境变量
+
+ADD:将宿主机目录下的文件拷贝进镜像且ADD命令会自动处理url和解压tar压缩包
+
+COPY:类似ADD，拷贝文件和目录到镜像中。将从构建上下文目录中<源路径>的文件/目录复制到新的一层的镜像内<目标路径>位置 COPY src dest COPY ["src","dest"]
+
+VOLUME :容器数据卷，用于数据保存和持久化工作
+
+CMD：指定一个容器启动是要运行的命令 
+     dockerfile中可以有多个CMD指令，但只有最后一个生效，CMD会被docker run之后的参数替换
+
+ENTRYPOINT ：指定一个容器启动是要运行的命令
+		
+	ENTRYPOINT 的目的和CMD一样，都是在指定容器你启动程序和参数 追加
+
+ONBUILD:当构建一个被继承的dockerfile时运行命令，父镜像在被子镜像继承后父镜像的onbuild被触发
+
+
+==============================================================================================================================================
+
+base镜像（scratch）:docker hub中99%的镜像都是通过在base镜像中安装和配置需要的软件构建出来的
+
+1.初始centos运行该镜像时默认的路径是/
+2.默认不支持vim
+3.默认不支持ifconfig
+
+
+
+FROM centos
+
+
+ENV mypath /tmp
+
+WORKDIR $mypath
+
+RUN yum -y install vim
+RUN yum -y installl net-tools
+
+EXPOSE 80
+CMD /bin/bash
+
+
+
+============================================================================================================================================
+>cat Dockerfile2
+
+FROM centos
+
+MAINTAINER jly<12000@qq.com>
+
+ENV MYPATH /usr/local
+
+WORKDIR $MYPATH
+
+RUN yum -y install vim
+RUN yum -y install net-tools
+
+EXPOSE 80
+CMD echo $MYPATH
+CMD echo "success------ok"
+CMD /bin/bash
+
+
+
+
+>docker build -f /mydocker/Dockerfile2 -t jly/centos2 .
+
+>docker run -it jly/centos2
+
+
+>docker attach 00ff208050ff
+
+>docker history 00ff208050ff
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
