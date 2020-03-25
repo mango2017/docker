@@ -344,6 +344,52 @@ CMD /bin/bash
 
 
 
+===================================================================================================================================================================
+
+CMD Dockerfile中可以有多个CMD命令，但只有最后一个生效，CMD会被docker run之后的参数替换
+
+docker run -it -p 8888:8080 tomcat ls -l
+
+
+测试ONBUILD：
+>vi Dockerfile4
+
+FROM centos
+RUN yum install -y curl
+ONBUILD RUN echo "father onbuild-----999"
+
+
+>docker build -f /mydocker/Dockerfile4 -t myip2 .
+
+>docker run -it myip2
+
+>vi Dockerfile5
+FROM myip2
+RUN yum install -y curl
+
+
+>docker build -f /mydocker/Dockerfile5 -t myip3 .
+
+
+
+Sending build context to Docker daemon  6.144kB
+Step 1/2 : FROM myip2
+# Executing 1 build trigger
+ ---> Running in f7c34cde7ece
+father onbuild-----999                   //会出现这句话
+Removing intermediate container f7c34cde7ece
+ ---> 58963276b58f
+Step 2/2 : RUN yum install -y curl
+ ---> Running in 847e3a34f031
+Last metadata expiration check: 0:20:14 ago on Wed Mar 25 08:11:34 2020.
+Package curl-7.61.1-11.el8.x86_64 is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+Removing intermediate container 847e3a34f031
+ ---> 4d10fb9203e9
+Successfully built 4d10fb9203e9
+Successfully tagged myip3:latest
 
 
 
